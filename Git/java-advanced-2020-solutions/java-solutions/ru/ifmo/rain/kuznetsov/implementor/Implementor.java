@@ -117,8 +117,9 @@ public class Implementor implements Impler {
      * @param end   line whose we write after all (type file)
      * @return path to file
      */
-    protected Path getPath(Path path, Class<?> token, String end) {
-        return path.resolve(getPackageName(token).replace('.', File.separatorChar)).resolve(token.getSimpleName() + "Impl." + end);
+    protected Path getPath(Path path, Class<?> token) {
+        return Paths.get(path.toString(), token.getPackageName().replaceAll("\\.", "\\" + File.separator), token.getSimpleName() + "Impl.java");
+        // return path.resolve(getPackageName(token).replace('.', File.separatorChar)).resolve(token.getSimpleName() + "Impl.java");
     }
 
     // SOME GETTERS FOR GENERATORS
