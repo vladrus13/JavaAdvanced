@@ -9,6 +9,7 @@ import java.io.Writer;
 import java.lang.reflect.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -117,8 +118,8 @@ public class Implementor implements Impler {
      * @param end   line whose we write after all (type file)
      * @return path to file
      */
-    protected Path getPath(Path path, Class<?> token) {
-        return Paths.get(path.toString(), token.getPackageName().replaceAll("\\.", "\\" + File.separator), token.getSimpleName() + "Impl.java");
+    protected Path getPath(Path path, Class<?> token, String end) {
+        return Paths.get(path.toString(), token.getPackageName().replaceAll("\\.", "\\" + File.separator), token.getSimpleName() + "Impl." + end);
         // return path.resolve(getPackageName(token).replace('.', File.separatorChar)).resolve(token.getSimpleName() + "Impl.java");
     }
 
