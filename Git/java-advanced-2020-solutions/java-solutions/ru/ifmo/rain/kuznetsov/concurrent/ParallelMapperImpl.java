@@ -6,18 +6,37 @@ import java.util.*;
 import java.util.function.Function;
 
 public class ParallelMapperImpl implements ParallelMapper {
+    /**
+     * Tasks
+     */
     private final Queue<Runnable> tasks;
+    /**
+     * Workers
+     */
     private final List<Thread> workers;
 
-    private class ResultCollector<R> {
+    /**
+     * Class result collector
+     * @param <R> type of data
+     */
+    private static class ResultCollector<R> {
         private final List<R> res;
         private int cnt;
 
+        /**
+         * Constructor with size
+         * @param size size
+         */
         ResultCollector(final int size) {
             res = new ArrayList<>(Collections.nCopies(size, null));
             cnt = 0;
         }
 
+        /**
+         * Set data
+         * @param pos position of data
+         * @param data data
+         */
         void setData(final int pos, R data) {
             res.set(pos, data);
             synchronized (this) {
@@ -27,6 +46,11 @@ public class ParallelMapperImpl implements ParallelMapper {
             }
         }
 
+        /**
+         * Wait until results
+         * @return result
+         * @throws InterruptedException if we got something error
+         */
         synchronized List<R> getRes() throws InterruptedException {
             while (cnt < res.size()) {
                 wait();
@@ -35,6 +59,10 @@ public class ParallelMapperImpl implements ParallelMapper {
         }
     }
 
+    /**
+     * Constructor
+     * @param threads number of threads
+     */
     public ParallelMapperImpl(final int threads) {
         tasks = new ArrayDeque<>();
         workers = new ArrayList<>();
@@ -68,10 +96,6 @@ public class ParallelMapperImpl implements ParallelMapper {
         for (int i = 0; i < args.size(); i++) {
             final int ind = i;
             synchronized (tasks) {
-
-                while (tasks.size() == 1) {
-                    tasks.wait();
-                }
                 tasks.add(() -> collector.setData(ind, f.apply(args.get(ind))));
                 tasks.notifyAll();
             }
@@ -81,7 +105,9 @@ public class ParallelMapperImpl implements ParallelMapper {
 
     @Override
     public void close() {
-        workers.forEach(Thread::interrupt);
+        for (Thread worker : workers) {
+            worker.interrupt();
+        }
         for (Thread thread : workers) {
             try {
                 thread.join();

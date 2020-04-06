@@ -1,6 +1,7 @@
 package ru.ifmo.rain.kuznetsov.concurrent;
 
 import info.kgeorgiy.java.advanced.concurrent.AdvancedIP;
+import info.kgeorgiy.java.advanced.mapper.ParallelMapper;
 
 import java.util.*;
 import java.util.function.Function;
@@ -12,6 +13,23 @@ import java.util.stream.Stream;
 
 public class IterativeParallelism implements AdvancedIP {
 
+    /**
+     * {@link ParallelMapper} element
+     */
+    private final ParallelMapper mapper;
+
+    /**
+     * Constructor without mapper
+     */
+    public IterativeParallelism() {this.mapper = null; }
+
+    /**
+     * Constructor with mapper
+     * @param mapper mapper
+     */
+    public IterativeParallelism(ParallelMapper mapper) {
+        this.mapper = mapper;
+    }
 
     /**
      * Very abstract parallelism function on many args
@@ -38,6 +56,9 @@ public class IterativeParallelism implements AdvancedIP {
             partedStreams.add(list.subList(last, right).stream());
             last = right;
         }
+        if (this.mapper != null) {
+            returned = this.mapper.map(mapper, partedStreams);
+        } else {
             returned = new ArrayList<>(Collections.nCopies(realCountThreads, null));
             for (int i = 0; i < realCountThreads; i++) {
                 int finalI = i;
@@ -55,7 +76,7 @@ public class IterativeParallelism implements AdvancedIP {
                         exception.addSuppressed(e);
                     }
                 }
-            
+            }
         }
         return reducer.apply(returned.stream());
     }
@@ -95,6 +116,13 @@ public class IterativeParallelism implements AdvancedIP {
         return !all(i, list, x -> !predicate.test(x));
     }
 
+    /**
+     * Reduce from stream on monoid
+     * @param stream which we reduce
+     * @param monoid what we do
+     * @param <T> type of result
+     * @return result
+     */
     private <T> T applyReduce(final Stream<T> stream, final Monoid<T> monoid) {
         return stream.reduce(monoid.getIdentity(), monoid.getOperator());
     }
@@ -104,6 +132,13 @@ public class IterativeParallelism implements AdvancedIP {
         return run(i, list, s -> applyReduce(s, monoid), s -> applyReduce(s, monoid));
     }
 
+    /**
+     * Reduce from mapping on monoid
+     * @param stream which we mapping
+     * @param monoid what we do
+     * @param <T> type of result
+     * @return result
+     */
     private <T, R> R applyMapReduce(final Stream<T> stream, final Monoid<R> monoid, final Function<T, R> function) {
         return applyReduce(stream.map(function), monoid);
     }

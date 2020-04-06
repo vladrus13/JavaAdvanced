@@ -8,4 +8,8 @@ module java.solutions {
 
     exports ru.ifmo.rain.kuznetsov.implementor;
     opens ru.ifmo.rain.kuznetsov.implementor;
+    exports ru.ifmo.rain.kuznetsov.concurrent;
+    opens ru.ifmo.rain.kuznetsov.concurrent;
+    exports ru.ifmo.rain.kuznetsov.crawler;
+    opens ru.ifmo.rain.kuznetsov.crawler;
 }

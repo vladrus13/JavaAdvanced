@@ -3,10 +3,12 @@ package ru.ifmo.rain.kuznetsov.implementor;
 import info.kgeorgiy.java.advanced.implementor.Impler;
 import info.kgeorgiy.java.advanced.implementor.ImplerException;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
 import java.lang.reflect.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -426,18 +428,17 @@ public class Implementor implements Impler {
         }
         root = getPath(root, token, "java");
         createDirectories(root);
-        try {
-            Writer writer = Files.newBufferedWriter(root);
+        try (BufferedWriter writer = Files.newBufferedWriter(root, StandardCharsets.UTF_8)) {
             writer.write(getUnicode(generateClassUp(token)));
             if (!token.isInterface()) {
                 generateConstructors(token, writer);
             }
             generateAbstractMethods(token, writer);
             writer.write(getUnicode("}" + generateLineSeparator()));
-            writer.close();
         } catch (IOException e) {
-            throw new ImplerException("Can't write to java file", e);
+            throw new ImplerException("Cannot create writer to write the implementor", e);
         }
+
     }
 
     public static void main(String[] args) {

@@ -4,5 +4,5 @@ Lib="../../java-advanced-2020/lib/"
 cd $Solution
 javac -p "$Lib:$Artifacts" $(find . -name "*.java") && \
 echo "Compile" && \
-java -cp . -p .:"$Artifacts:$Lib" -m info.kgeorgiy.java.advanced.concurrent advanced ru.ifmo.rain.kuznetsov.concurrent.IterativeParallelism 12348304;
+java -cp . -p .:"$Artifacts:$Lib" -m info.kgeorgiy.java.advanced.concurrent advanced ru.ifmo.rain.kuznetsov.concurrent.IterativeParallelism;
 rm $(find . -name "*.class")
