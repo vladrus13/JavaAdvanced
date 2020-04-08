@@ -40,7 +40,7 @@ public class JarImplementor extends Implementor implements JarImpler {
             throw new ImplerException("Token or class is null");
         }
         createDirectories(path);
-        Path templateDir;
+        Path tempDir;
         String classPath;
         try {
             classPath = Path.of(aClass.getProtectionDomain().getCodeSource().getLocation().toURI()).toString();
@@ -48,17 +48,17 @@ public class JarImplementor extends Implementor implements JarImpler {
             throw new ImplerException("Failed to convert URL to URI", e);
         }
         try {
-            templateDir = Files.createTempDirectory(path.toAbsolutePath().getParent(), "temp");
+            tempDir = Files.createTempDirectory(path.toAbsolutePath().getParent(), "temp");
         } catch (IOException e) {
             throw new ImplerException("Can't create template directory", e);
         }
         try {
-            implement(aClass, templateDir);
+            implement(aClass, tempDir);
             JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
             String[] args = new String[]{
                     "-classpath",
                     classPath,
-                    templateDir.resolve(aClass.getPackageName().replace('.', File.separatorChar))
+                    tempDir.resolve(aClass.getPackageName().replace('.', File.separatorChar))
                             .resolve(generateClassName(aClass) + ".java").toString()
             };
             if (compiler.run(null, null, null, args) != 0) {
@@ -72,13 +72,13 @@ public class JarImplementor extends Implementor implements JarImpler {
             try (JarOutputStream writerJar = new JarOutputStream(Files.newOutputStream(path), manifest)) {
                 zipEntry = new ZipEntry(localPath);
                 writerJar.putNextEntry(zipEntry);
-                Files.copy(getPath(templateDir, aClass, "class"), writerJar);
+                Files.copy(getPath(tempDir, aClass, "class"), writerJar);
             } catch (IOException e) {
                 throw new ImplerException("Can't write to JAR", e);
             }
         } finally {
             try {
-                Files.walkFileTree(templateDir, new SimpleFileVisitor<>() {
+                Files.walkFileTree(tempDir, new SimpleFileVisitor<>() {
                     @Override
                     public FileVisitResult visitFile(Path file, BasicFileAttributes attributes) throws IOException {
                         Files.delete(file);
@@ -92,8 +92,7 @@ public class JarImplementor extends Implementor implements JarImpler {
                     }
                 });
             } catch (IOException e) {
-                // ignore: can't delete directory
-                System.out.println("Can't delete dir" + e.getMessage());
+                throw new ImplerException("can't delete directory", e);
             }
         }
     }

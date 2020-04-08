@@ -6,7 +6,6 @@ import info.kgeorgiy.java.advanced.implementor.ImplerException;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
-import java.io.Writer;
 import java.lang.reflect.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -31,7 +30,7 @@ public class Implementor implements Impler {
          * return {@link Method}
          * @return method
          */
-        public Method getMethod() {
+        private Method getMethod() {
             return method;
         }
 
@@ -57,19 +56,9 @@ public class Implementor implements Impler {
             }
             if (object instanceof UniqMethod) {
                 UniqMethod another = (UniqMethod) object;
-                if (method.getName().equals(another.getMethod().getName())) {
-                    return true;
-                }
-                if (method.getReturnType().equals(another.getMethod().getReturnType())) {
-                    return true;
-                }
-                if (Arrays.equals(method.getParameterTypes(), another.getMethod().getParameterTypes())) {
-                    return true;
-                }
-                if (method.hashCode() != another.getMethod().hashCode()) {
-                    return true;
-                }
-                return false;
+                return method.getName().equals(another.getMethod().getName()) &&
+                        method.getReturnType().equals(another.getMethod().getReturnType()) &&
+                        Arrays.equals(method.getParameterTypes(), another.getMethod().getParameterTypes());
             }
             return false;
         }
@@ -81,7 +70,7 @@ public class Implementor implements Impler {
          */
         @Override
         public int hashCode() {
-            return (Arrays.hashCode(method.getParameterTypes()) + method.getReturnType().hashCode()) + method.getName().hashCode();
+            return Objects.hash(method.getName(), Arrays.hashCode(method.getParameterTypes()));
         }
     }
 
@@ -90,7 +79,7 @@ public class Implementor implements Impler {
      * @param s input string
      * @return Unicode string
      */
-    private String getUnicode(String s) {
+    private String escapeUnicode(String s) {
         StringBuilder stringBuilder = new StringBuilder();
         for (char ch : s.toCharArray()) {
             stringBuilder.append(ch >= 128 ? String.format("\\u%04X", (int) ch) : ch);
@@ -340,18 +329,19 @@ public class Implementor implements Impler {
      * Generate constructors for class and write it to writer.
      *
      * @param token  class whose we generate constructors
-     * @param writer writer class
-     * @throws IOException     if error during writing
+     * @return result
      * @throws ImplerException if class doesn't have not private constructors
      */
-    private void generateConstructors(Class<?> token, Writer writer) throws IOException, ImplerException {
+    private String generateConstructors(Class<?> token) throws ImplerException {
         Constructor<?>[] constructors = getConstructors(token);
         if (constructors.length == 0) {
             throw new ImplerException("You may not implement void");
         }
+        StringBuilder stringBuilder = new StringBuilder();
         for (Constructor<?> constructor : constructors) {
-            writer.write(getUnicode(generateExecutable(constructor)));
+            stringBuilder.append(generateExecutable(constructor));
         }
+        return stringBuilder.toString();
     }
 
     /**
@@ -369,12 +359,11 @@ public class Implementor implements Impler {
     }
 
     /**
-     * Write abstract methods
+     * Generate abstract methods
      * @param token class
-     * @param writer those write
-     * @throws IOException if problems with writer
+     * @return result
      */
-    private void generateAbstractMethods(Class<?> token, Writer writer) throws IOException {
+    private String generateAbstractMethods(Class<?> token) {
         Set<UniqMethod> methods = new HashSet<>();
         Set<UniqMethod> finalMethods = new HashSet<>();
         addMethods(token.getMethods(), methods, method -> Modifier.isAbstract(method.getModifiers()));
@@ -384,9 +373,28 @@ public class Implementor implements Impler {
             token = token.getSuperclass();
         }
         methods.removeAll(finalMethods);
+        StringBuilder stringBuilder = new StringBuilder();
         for (UniqMethod method : methods) {
-            writer.write(getUnicode(generateExecutable(method.getMethod())));
+            stringBuilder.append(generateExecutable(method.getMethod()));
         }
+        return stringBuilder.toString();
+    }
+
+    /**
+     *
+     * @param token class
+     * @return full code of class
+     * @throws ImplerException if class got smth error
+     */
+    private String generateCode(Class<?> token) throws ImplerException {
+        StringBuilder stringBuilder = new StringBuilder("");
+        stringBuilder.append(generateClassUp(token));
+        if (!token.isInterface()) {
+            stringBuilder.append(generateConstructors(token));
+        }
+        stringBuilder.append(generateAbstractMethods(token));
+        stringBuilder.append("}").append(generateLineSeparator());
+        return stringBuilder.toString();
     }
 
     // / GENERATORS FOR CODE
@@ -429,16 +437,10 @@ public class Implementor implements Impler {
         root = getPath(root, token, "java");
         createDirectories(root);
         try (BufferedWriter writer = Files.newBufferedWriter(root, StandardCharsets.UTF_8)) {
-            writer.write(getUnicode(generateClassUp(token)));
-            if (!token.isInterface()) {
-                generateConstructors(token, writer);
-            }
-            generateAbstractMethods(token, writer);
-            writer.write(getUnicode("}" + generateLineSeparator()));
+            writer.write(escapeUnicode(generateCode(token)));
         } catch (IOException e) {
             throw new ImplerException("Cannot create writer to write the implementor", e);
         }
-
     }
 
     public static void main(String[] args) {
