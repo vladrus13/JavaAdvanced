@@ -5,5 +5,6 @@ Build="../_build"
 cd ../../../../../
 # shellcheck disable=SC2046
 javac -p "$Lib:$Artifacts" -d "$Build" $(find . -name "*.java")
-echo "Main-Class: ru.ifmo.rain.kuznetsov.impl.JarImplementor" > ru/ifmo/rain/kuznetsov/implementor/Manifest
+echo "Main-Class: ru.ifmo.rain.kuznetsov.implementor.JarImplementor" > ru/ifmo/rain/kuznetsov/implementor/Manifest
 jar cmf ru/ifmo/rain/kuznetsov/implementor/Manifest _implementor.jar -C "$Build/" .
+rm ru/ifmo/rain/kuznetsov/implementor/Manifest
