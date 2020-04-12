@@ -6,11 +6,9 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Phaser;
+import java.util.concurrent.*;
 
 public class WebCrawler implements Crawler {
     private final Downloader downloader;
@@ -60,6 +58,48 @@ public class WebCrawler implements Crawler {
         }
     }
 
+    private void addBreadthFirstSearch(String url, int depth, Set<String> downloaded, Map<String, IOException> errors, Set<String> viewed, Phaser phaser) {
+        Queue<Pair> urls = new ConcurrentLinkedDeque<>();
+        urls.add(new Pair(url, 0));
+        int currentWave = 0;
+        while (!urls.isEmpty()) {
+            Pair currentUrl = urls.poll();
+            if (currentUrl.getDepth() > currentWave) {
+                phaser.arriveAndAwaitAdvance();
+                currentWave++;
+            }
+            phaser.register();
+            try {
+                String host = URLUtils.getHost(url);
+                Host data = hostMap.computeIfAbsent(host, element -> new Host(perHost, downloaderPool));
+                data.add(() -> {
+                    try {
+                        Document document = downloader.download(currentUrl.getUrl());
+                        downloaded.add(currentUrl.getUrl());
+                        if (currentUrl.getDepth() < depth) {
+                            extractorPool.submit(() -> {
+                                try {
+                                    document.extractLinks().parallelStream().filter(viewed::contains).forEach(element -> {
+                                        viewed.add(element);
+                                        urls.add(new Pair(element, currentUrl.getDepth()));
+                                    });
+                                } catch (IOException e) {
+                                    // ignored
+                                }
+                            });
+                        }
+                    } catch (IOException e) {
+                        errors.put(currentUrl.getUrl(), e);
+                    } finally {
+                        data.next();
+                    }
+                });
+            } catch (MalformedURLException e) {
+                errors.put(currentUrl.getUrl(), e);
+            }
+        }
+    }
+
     @Override
     public Result download(String url, int depth) {
         Set<String> downloaded = ConcurrentHashMap.newKeySet();
@@ -89,6 +129,24 @@ public class WebCrawler implements Crawler {
             System.out.println("Can't create CachingDownloader" + e.getMessage());
         } catch (NumberFormatException e) {
             System.out.println("Can't parse" + e.getMessage());
+        }
+    }
+
+    private class Pair {
+        private String url;
+        private int depth;
+
+        public Pair(String url, int depth) {
+            this.url = url;
+            this.depth = depth;
+        }
+
+        public String getUrl() {
+            return url;
+        }
+
+        public int getDepth() {
+            return depth;
         }
     }
 }
