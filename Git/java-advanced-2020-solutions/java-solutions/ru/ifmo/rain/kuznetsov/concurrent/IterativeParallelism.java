@@ -21,10 +21,13 @@ public class IterativeParallelism implements AdvancedIP {
     /**
      * Constructor without mapper
      */
-    public IterativeParallelism() {this.mapper = null; }
+    public IterativeParallelism() {
+        this.mapper = null;
+    }
 
     /**
      * Constructor with mapper
+     *
      * @param mapper mapper
      */
     public IterativeParallelism(ParallelMapper mapper) {
@@ -33,6 +36,7 @@ public class IterativeParallelism implements AdvancedIP {
 
     /**
      * Very abstract parallelism function on many args
+     *
      * @param countThreads - count threads
      * @param list         - list, whose we run
      * @param mapper       - function, whose apply to all elements
@@ -48,7 +52,7 @@ public class IterativeParallelism implements AdvancedIP {
         List<R> returned;
         int blockSize = list.size() / realCountThreads;
         int surplus = list.size() - (blockSize * realCountThreads);
-        List <Stream<T>> partedStreams = new ArrayList<>();
+        List<Stream<T>> partedStreams = new ArrayList<>();
         int last = 0, right;
         for (int i = 0; i < realCountThreads; i++) {
             right = last + blockSize + (surplus > 0 ? 1 : 0);
@@ -76,6 +80,9 @@ public class IterativeParallelism implements AdvancedIP {
                         exception.addSuppressed(e);
                     }
                 }
+            }
+            if (exception != null) {
+                throw exception;
             }
         }
         return reducer.apply(returned.stream());
@@ -118,9 +125,10 @@ public class IterativeParallelism implements AdvancedIP {
 
     /**
      * Reduce from stream on monoid
+     *
      * @param stream which we reduce
      * @param monoid what we do
-     * @param <T> type of result
+     * @param <T>    type of result
      * @return result
      */
     private <T> T applyReduce(final Stream<T> stream, final Monoid<T> monoid) {
@@ -134,9 +142,10 @@ public class IterativeParallelism implements AdvancedIP {
 
     /**
      * Reduce from mapping on monoid
+     *
      * @param stream which we mapping
      * @param monoid what we do
-     * @param <T> type of result
+     * @param <T>    type of result
      * @return result
      */
     private <T, R> R applyMapReduce(final Stream<T> stream, final Monoid<R> monoid, final Function<T, R> function) {
