@@ -3,7 +3,6 @@ package ru.ifmo.rain.kuznetsov.concurrent;
 import info.kgeorgiy.java.advanced.mapper.ParallelMapper;
 
 import java.util.*;
-import java.util.concurrent.SynchronousQueue;
 import java.util.function.Function;
 
 public class ParallelMapperImpl implements ParallelMapper {
@@ -18,6 +17,7 @@ public class ParallelMapperImpl implements ParallelMapper {
 
     /**
      * Class result collector
+     *
      * @param <R> type of data
      */
     private static class ResultCollector<R> {
@@ -26,6 +26,7 @@ public class ParallelMapperImpl implements ParallelMapper {
 
         /**
          * Constructor with size
+         *
          * @param size size
          */
         ResultCollector(final int size) {
@@ -35,7 +36,8 @@ public class ParallelMapperImpl implements ParallelMapper {
 
         /**
          * Set data
-         * @param pos position of data
+         *
+         * @param pos  position of data
          * @param data data
          */
         void setData(final int pos, R data) {
@@ -49,6 +51,7 @@ public class ParallelMapperImpl implements ParallelMapper {
 
         /**
          * Wait until results
+         *
          * @return result
          * @throws InterruptedException if we got something error
          */
@@ -62,33 +65,32 @@ public class ParallelMapperImpl implements ParallelMapper {
 
     /**
      * Constructor
+     *
      * @param threads number of threads
      */
     public ParallelMapperImpl(final int threads) {
         if (threads <= 0) {
             throw new IllegalArgumentException("Treads must be positive!");
         }
-        tasks = new ArrayDeque<>();
+        tasks = new LinkedList<>();
         workers = new ArrayList<>();
         for (int i = 0; i < threads; i++) {
             Thread temp = new Thread(() -> {
-            try {
-                while (!Thread.interrupted()) {
-                    Runnable task;
-                    synchronized (tasks) {
-                        while (tasks.isEmpty()) {
-                            tasks.wait();
+                try {
+                    while (!Thread.interrupted()) {
+                        Runnable task;
+                        synchronized (tasks) {
+                            while (tasks.isEmpty()) {
+                                tasks.wait();
+                            }
+                            task = tasks.poll();
+                            tasks.notifyAll();
                         }
-                        task = tasks.poll();
-                        tasks.notifyAll();
+                        task.run();
                     }
-                    task.run();
+                } catch (InterruptedException ignored) {
                 }
-            } catch (InterruptedException ignored) {
-                // ignored
-            } finally {
-                Thread.currentThread().interrupt();
-            } } );
+            });
             workers.add(temp);
             temp.start();
         }
@@ -131,7 +133,6 @@ public class ParallelMapperImpl implements ParallelMapper {
             try {
                 thread.join();
             } catch (InterruptedException ignored) {
-                // ignored
             }
         }
     }
