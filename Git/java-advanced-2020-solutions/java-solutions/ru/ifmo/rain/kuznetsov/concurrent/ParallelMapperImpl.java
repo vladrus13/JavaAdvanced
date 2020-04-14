@@ -3,6 +3,7 @@ package ru.ifmo.rain.kuznetsov.concurrent;
 import info.kgeorgiy.java.advanced.mapper.ParallelMapper;
 
 import java.util.*;
+import java.util.concurrent.SynchronousQueue;
 import java.util.function.Function;
 
 public class ParallelMapperImpl implements ParallelMapper {
@@ -64,6 +65,9 @@ public class ParallelMapperImpl implements ParallelMapper {
      * @param threads number of threads
      */
     public ParallelMapperImpl(final int threads) {
+        if (threads <= 0) {
+            throw new IllegalArgumentException("Treads must be positive!");
+        }
         tasks = new ArrayDeque<>();
         workers = new ArrayList<>();
         for (int i = 0; i < threads; i++) {
@@ -93,12 +97,27 @@ public class ParallelMapperImpl implements ParallelMapper {
     @Override
     public <T, R> List<R> map(Function<? super T, ? extends R> f, List<? extends T> args) throws InterruptedException {
         ResultCollector<R> collector = new ResultCollector<>(args.size());
+        List<RuntimeException> runtimeExceptions = new ArrayList<>();
         for (int i = 0; i < args.size(); i++) {
             final int ind = i;
             synchronized (tasks) {
-                tasks.add(() -> collector.setData(ind, f.apply(args.get(ind))));
+                tasks.add(() -> {
+                    R value = null;
+                    try {
+                        value = f.apply(args.get(ind));
+                    } catch (RuntimeException e) {
+                        synchronized (runtimeExceptions) {
+                            runtimeExceptions.add(e);
+                        }
+                    }
+                    collector.setData(ind, value);
+                });
                 tasks.notifyAll();
             }
+        }
+        if (!runtimeExceptions.isEmpty()) {
+            RuntimeException exception = new RuntimeException("Error while run");
+            runtimeExceptions.forEach(exception::addSuppressed);
         }
         return collector.getRes();
     }

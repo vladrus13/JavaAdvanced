@@ -26,8 +26,49 @@ public class CrawlerEasyTest extends BaseTest {
         test("https://itmo.ru", 2);
     }
 
+    @Test
+    public void test03_deep() throws IOException {
+        test("http://www.kgeorgiy.info", 4);
+    }
+
+    @Test
+    public void test04_shallow() throws IOException {
+        test("http://www.kgeorgiy.info", 2);
+    }
+
+    @Test
+    public void test05_noLimits() throws IOException {
+        test(Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE, 10, 10);
+    }
+
+    @Test
+    public void test06_limitDownloads() throws IOException {
+        test(10, Integer.MAX_VALUE, Integer.MAX_VALUE, 300, 10);
+    }
+
+    @Test
+    public void test07_limitExtractors() throws IOException {
+        test(Integer.MAX_VALUE, 10, Integer.MAX_VALUE, 10, 300);
+    }
+
+    @Test
+    public void test08_limitBoth() throws IOException {
+        test(10, 10, Integer.MAX_VALUE, 300, 300);
+    }
+
+    @Test
+    public void test09_performance() throws IOException {
+        final long time = test(Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE, 1000, 1000);
+        System.err.println("Time: " + time);
+        Assert.assertTrue("Not parallel: " + time, time < 5000);
+    }
+
     private static void test(final String url, final int depth) throws IOException {
         test(url, depth, Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE, 10, 10);
+    }
+
+    protected static long test(final int downloaders, final int extractors, final int perHost, final int downloadTimeout, final int extractTimeout) throws IOException {
+        return test("http://nerc.itmo.ru/subregions/index.html", 3, downloaders, extractors, perHost, downloadTimeout, extractTimeout);
     }
 
     protected static long test(final String url, final int depth, final int downloaders, final int extractors, final int perHost, final int downloadTimeout, final int extractTimeout) throws IOException {
