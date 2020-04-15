@@ -387,7 +387,7 @@ public class Implementor implements Impler {
      * @throws ImplerException if class got smth error
      */
     private String generateCode(Class<?> token) throws ImplerException {
-        StringBuilder stringBuilder = new StringBuilder("");
+        StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append(generateClassUp(token));
         if (!token.isInterface()) {
             stringBuilder.append(generateConstructors(token));

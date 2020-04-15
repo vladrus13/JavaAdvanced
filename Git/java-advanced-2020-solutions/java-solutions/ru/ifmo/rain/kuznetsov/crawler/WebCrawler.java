@@ -11,12 +11,34 @@ import java.util.Set;
 import java.util.concurrent.*;
 
 public class WebCrawler implements Crawler {
+    /**
+     * {@link Downloader} for download page
+     */
     private final Downloader downloader;
+    /**
+     * How much downloads at moment can be
+     */
     private final int perHost;
+    /**
+     * Downloaders {@link ExecutorService}
+     */
     private final ExecutorService downloaderPool;
+    /**
+     * Extractors {@link ExecutorService}
+     */
     private final ExecutorService extractorPool;
+    /**
+     * Hosts map
+     */
     private final Map<String, Host> hostMap;
 
+    /**
+     * Constuctor for {@link WebCrawler}
+     * @param downloader downloader {@link Downloader}
+     * @param downloaders count of downloaders
+     * @param extractors count of extractors
+     * @param perHost count of downloads of host
+     */
     public WebCrawler(Downloader downloader, int downloaders, int extractors, int perHost) {
         this.downloader = downloader;
         this.perHost = perHost;
@@ -25,39 +47,16 @@ public class WebCrawler implements Crawler {
         hostMap = new ConcurrentHashMap<>();
     }
 
-    private void addRecursive(String url, int depth, Set<String> downloaded, Map<String, IOException> errors, Set<String> viewed, Phaser phaser) {
-        try {
-            String host = URLUtils.getHost(url);
-            Host data = hostMap.computeIfAbsent(host, element -> new Host(perHost, downloaderPool));
-            phaser.register();
-            data.add(() -> {
-                try {
-                    Document document = downloader.download(url);
-                    downloaded.add(url);
-                    if (depth - 1 > 0) {
-                        phaser.register();
-                        extractorPool.submit(() -> {
-                            try {
-                                document.extractLinks().parallelStream().filter(element -> !viewed.contains(element)).filter(viewed::add).forEach(element -> addRecursive(element, depth - 1, downloaded, errors, viewed, phaser));
-                            } catch (IOException e) {
-                                // ignored
-                            } finally {
-                                phaser.arrive();
-                            }
-                        });
-                    }
-                } catch (IOException e) {
-                    errors.put(url, e);
-                } finally {
-                    phaser.arrive();
-                    data.next();
-                }
-            });
-        } catch (MalformedURLException e) {
-            errors.put(url, e);
-        }
-    }
-
+    /**
+     * Download all necessary links
+     * @param url start url
+     * @param depth how deep it is allowed to go
+     * @param downloaded downloaded links
+     * @param errors errors on download links
+     * @param viewed viewed links
+     * @param phaser phaser
+     */
+    @SuppressWarnings("ConstantConditions")
     private void addBreadthFirstSearch(String url, int depth, Set<String> downloaded, Map<String, IOException> errors, Set<String> viewed, Phaser phaser) {
         Queue<Pair> urls = new ConcurrentLinkedDeque<>();
         urls.add(new Pair(url, 1));
@@ -137,19 +136,41 @@ public class WebCrawler implements Crawler {
         }
     }
 
+    /**
+     * Pair for BFS-algorithm
+     */
     private static class Pair {
+        /**
+         * URL
+         */
         private final String url;
+        /**
+         * depth
+         */
         private final int depth;
 
+        /**
+         * Constructor
+         * @param url url)
+         * @param depth depth
+         */
         public Pair(String url, int depth) {
             this.url = url;
             this.depth = depth;
         }
 
+        /**
+         * Getter for URL
+         * @return URL
+         */
         public String getUrl() {
             return url;
         }
 
+        /**
+         * Getter for depth
+         * @return depth
+         */
         public int getDepth() {
             return depth;
         }

@@ -5,6 +5,9 @@ import info.kgeorgiy.java.advanced.mapper.ParallelMapper;
 import java.util.*;
 import java.util.function.Function;
 
+/**
+ * Impl for class {@link ParallelMapper}
+ */
 public class ParallelMapperImpl implements ParallelMapper {
     /**
      * Tasks
@@ -14,54 +17,6 @@ public class ParallelMapperImpl implements ParallelMapper {
      * Workers
      */
     private final List<Thread> workers;
-
-    /**
-     * Class result collector
-     *
-     * @param <R> type of data
-     */
-    private static class ResultCollector<R> {
-        private final List<R> res;
-        private int cnt;
-
-        /**
-         * Constructor with size
-         *
-         * @param size size
-         */
-        ResultCollector(final int size) {
-            res = new ArrayList<>(Collections.nCopies(size, null));
-            cnt = 0;
-        }
-
-        /**
-         * Set data
-         *
-         * @param pos  position of data
-         * @param data data
-         */
-        void setData(final int pos, R data) {
-            res.set(pos, data);
-            synchronized (this) {
-                if (++cnt == res.size()) {
-                    notify();
-                }
-            }
-        }
-
-        /**
-         * Wait until results
-         *
-         * @return result
-         * @throws InterruptedException if we got something error
-         */
-        synchronized List<R> getRes() throws InterruptedException {
-            while (cnt < res.size()) {
-                wait();
-            }
-            return res;
-        }
-    }
 
     /**
      * Constructor
