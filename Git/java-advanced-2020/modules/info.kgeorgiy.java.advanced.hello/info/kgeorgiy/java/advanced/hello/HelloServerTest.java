@@ -17,7 +17,7 @@ import java.util.function.IntFunction;
 import static info.kgeorgiy.java.advanced.hello.Util.response;
 
 /**
- * Basic tests for {@link HelloServer}.
+ * Full tests for {@link HelloServer}.
  *
  * @author Georgiy Korneev (kgeorgiy@kgeorgiy.info)
  */
@@ -43,6 +43,15 @@ public class HelloServerTest extends BaseTest {
     }
 
     @Test
+    public void test03_multipleRequests() throws IOException {
+        test(1, port -> socket -> {
+            for (int i = 0; i < 10; i++) {
+                checkResponse(port, socket, REQUEST + i);
+            }
+        });
+    }
+
+    @Test
     public void test04_parallelRequests() throws IOException {
         test(1, port -> socket -> {
             final Set<String> responses = new HashSet<>();
@@ -56,6 +65,39 @@ public class HelloServerTest extends BaseTest {
                 Assert.assertTrue("Unexpected response " + response, responses.remove(response));
             }
         });
+    }
+
+    @Test
+    public void test05_parallelClients() {
+        try (final HelloServer server = createCUT()) {
+            final int port = getPort();
+            server.start(port, 1);
+            parallel(10, () -> client(port, REQUEST));
+        }
+    }
+
+    @Test
+    public void test06_dos() throws IOException {
+        test(1, port -> socket -> parallel(100, () -> {
+            for (int i = 0; i < 10000; i++) {
+                send(port, socket, REQUEST);
+            }
+        }));
+    }
+
+    @Test
+    public void test07_noDoS() {
+        try (final HelloServer server = createCUT()) {
+            final int port = getPort();
+            server.start(port, 10);
+            parallel(10, () -> {
+                try (final DatagramSocket socket = new DatagramSocket(null)) {
+                    for (int i = 0; i < 10000; i++) {
+                        checkResponse(port, socket, REQUEST + i);
+                    }
+                }
+            });
+        }
     }
 
     private static void send(final int port, final DatagramSocket socket, final String request) throws IOException {

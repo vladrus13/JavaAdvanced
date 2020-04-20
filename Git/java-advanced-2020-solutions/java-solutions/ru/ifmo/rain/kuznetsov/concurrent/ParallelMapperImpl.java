@@ -13,6 +13,7 @@ public class ParallelMapperImpl implements ParallelMapper {
      * Tasks
      */
     private final Queue<Runnable> tasks;
+
     /**
      * Workers
      */
@@ -25,12 +26,12 @@ public class ParallelMapperImpl implements ParallelMapper {
      */
     public ParallelMapperImpl(final int threads) {
         if (threads <= 0) {
-            throw new IllegalArgumentException("Treads must be positive!");
+            throw new IllegalArgumentException("Threads must be positive");
         }
         tasks = new LinkedList<>();
         workers = new ArrayList<>();
         for (int i = 0; i < threads; i++) {
-            Thread temp = new Thread(() -> {
+            Thread thread = new Thread(() -> {
                 try {
                     while (!Thread.interrupted()) {
                         Runnable task;
@@ -46,8 +47,8 @@ public class ParallelMapperImpl implements ParallelMapper {
                 } catch (InterruptedException ignored) {
                 }
             });
-            workers.add(temp);
-            temp.start();
+            workers.add(thread);
+            thread.start();
         }
     }
 
@@ -56,27 +57,30 @@ public class ParallelMapperImpl implements ParallelMapper {
         ResultCollector<R> collector = new ResultCollector<>(args.size());
         List<RuntimeException> runtimeExceptions = new ArrayList<>();
         for (int i = 0; i < args.size(); i++) {
-            final int ind = i;
+            final int index = i;
             synchronized (tasks) {
                 tasks.add(() -> {
                     R value = null;
                     try {
-                        value = f.apply(args.get(ind));
+                        value = f.apply(args.get(index));
                     } catch (RuntimeException e) {
                         synchronized (runtimeExceptions) {
                             runtimeExceptions.add(e);
                         }
                     }
-                    collector.setData(ind, value);
+                    collector.setData(index, value);
                 });
                 tasks.notifyAll();
             }
         }
         if (!runtimeExceptions.isEmpty()) {
-            RuntimeException exception = new RuntimeException("Error while run");
-            runtimeExceptions.forEach(exception::addSuppressed);
+            RuntimeException exception = runtimeExceptions.get(0);
+            for (int i = 1; i < runtimeExceptions.size(); i++) {
+                exception.addSuppressed(runtimeExceptions.get(i));
+            }
+            throw exception;
         }
-        return collector.getRes();
+        return collector.getResults();
     }
 
     @Override

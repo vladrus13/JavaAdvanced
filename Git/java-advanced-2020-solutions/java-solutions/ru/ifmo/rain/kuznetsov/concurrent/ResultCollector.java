@@ -9,9 +9,9 @@ import java.util.List;
  *
  * @param <R> type of data
  */
-public class ResultCollector<R> {
-    private final List<R> res;
-    private int cnt;
+class ResultCollector<R> {
+    private final List<R> results;
+    private int count;
 
     /**
      * Constructor with size
@@ -19,8 +19,8 @@ public class ResultCollector<R> {
      * @param size size
      */
     ResultCollector(final int size) {
-        res = new ArrayList<>(Collections.nCopies(size, null));
-        cnt = 0;
+        results = new ArrayList<>(Collections.nCopies(size, null));
+        count = 0;
     }
 
     /**
@@ -30,9 +30,9 @@ public class ResultCollector<R> {
      * @param data data
      */
     void setData(final int pos, R data) {
-        res.set(pos, data);
+        results.set(pos, data);
         synchronized (this) {
-            if (++cnt == res.size()) {
+            if (++count == results.size()) {
                 notify();
             }
         }
@@ -44,10 +44,10 @@ public class ResultCollector<R> {
      * @return result
      * @throws InterruptedException if we got something error
      */
-    synchronized List<R> getRes() throws InterruptedException {
-        while (cnt < res.size()) {
+    synchronized List<R> getResults() throws InterruptedException {
+        while (count < results.size()) {
             wait();
         }
-        return res;
+        return results;
     }
 }
