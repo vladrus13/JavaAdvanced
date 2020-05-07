@@ -116,7 +116,7 @@ public class ScalarIPTest<P extends ScalarIP> extends BaseIPTest<P> {
         final long time = System.nanoTime() - start;
 
         final int sequential = subtasks - 1;
-        final int parallel = data.size() / threads - 1;
+        final int parallel = (data.size() - subtasks) / threads;
         return time / 1e6 / (sequential + parallel);
     }
 }

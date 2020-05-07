@@ -118,7 +118,7 @@ public class WalkTest extends BaseTest {
     @Test
     public void test62_invalidOutput() throws IOException {
         final String input = createEmptyFile(name.getMethodName());
-        runRaw(input, "/");
+        runRaw(input, DIR.toString());
         runRaw(input, "\0*");
         final String file = createEmptyFile(name.getMethodName());
         runRaw(input, file + "/" + randomFileName());

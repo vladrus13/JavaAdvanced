@@ -34,10 +34,11 @@ public class WebCrawler implements Crawler {
 
     /**
      * Constuctor for {@link WebCrawler}
-     * @param downloader downloader {@link Downloader}
+     *
+     * @param downloader  downloader {@link Downloader}
      * @param downloaders count of downloaders
-     * @param extractors count of extractors
-     * @param perHost count of downloads of host
+     * @param extractors  count of extractors
+     * @param perHost     count of downloads of host
      */
     public WebCrawler(Downloader downloader, int downloaders, int extractors, int perHost) {
         this.downloader = downloader;
@@ -49,25 +50,25 @@ public class WebCrawler implements Crawler {
 
     /**
      * Download all necessary links
-     * @param url start url
-     * @param depth how deep it is allowed to go
+     *
+     * @param url        start url
+     * @param depth      how deep it is allowed to go
      * @param downloaded downloaded links
-     * @param errors errors on download links
-     * @param viewed viewed links
-     * @param phaser phaser
+     * @param errors     errors on download links
+     * @param viewed     viewed links
+     * @param phaser     phaser
      */
     @SuppressWarnings("ConstantConditions")
     private void addBreadthFirstSearch(String url, int depth, Set<String> downloaded, Map<String, IOException> errors, Set<String> viewed, Phaser phaser) {
-        Queue<Pair> urls = new ConcurrentLinkedDeque<>();
-        urls.add(new Pair(url, 1));
+        Queue<UrlAndDepth> urls = new ConcurrentLinkedQueue<>();
+        urls.add(new UrlAndDepth(url, 1));
         int currentWave = 0;
         while (!urls.isEmpty()) {
             if (urls.peek().getDepth() > currentWave) {
                 currentWave++;
                 phaser.arriveAndAwaitAdvance();
-                continue;
             }
-            Pair currentUrl = urls.poll();
+            UrlAndDepth currentUrl = urls.poll();
             try {
                 String host = URLUtils.getHost(currentUrl.getUrl());
                 Host data = hostMap.computeIfAbsent(host, element -> new Host(perHost, downloaderPool));
@@ -80,7 +81,9 @@ public class WebCrawler implements Crawler {
                             phaser.register();
                             extractorPool.submit(() -> {
                                 try {
-                                    document.extractLinks().stream().filter(element -> !viewed.contains(element)).filter(viewed::add).forEach(element -> urls.add(new Pair(element, currentUrl.getDepth() + 1)));
+                                    document.extractLinks().stream()
+                                            .filter(viewed::add)
+                                            .forEach(element -> urls.add(new UrlAndDepth(element, currentUrl.getDepth() + 1)));
                                 } catch (IOException e) {
                                     // ignored
                                 } finally {
@@ -123,12 +126,20 @@ public class WebCrawler implements Crawler {
     }
 
     public static void main(String[] args) {
-        if (args.length != 4) {
-            System.out.println("Must be 4 arg");
+        String[] newArgs = new String[4];
+        if (args == null || args.length < 1 || args[0] == null) {
+            System.out.println("Unknown URL");
+            return;
         }
-        try {
-            WebCrawler webCrawler = new WebCrawler(new CachingDownloader(), Integer.parseInt(args[1]), Integer.parseInt(args[2]), Integer.parseInt(args[3]));
-            webCrawler.download(args[0], Integer.parseInt(args[1]));
+        for (int i = 0; i < 4; i++) {
+            if (args.length > i && args[i] != null) {
+                newArgs[i] = args[i];
+            } else {
+                newArgs[i] = "16";
+            }
+        }
+        try (WebCrawler webCrawler = new WebCrawler(new CachingDownloader(), Integer.parseInt(newArgs[1]), Integer.parseInt(newArgs[2]), Integer.parseInt(newArgs[3]))) {
+            webCrawler.download(newArgs[0], Integer.parseInt(newArgs[1]));
         } catch (IOException e) {
             System.out.println("Can't create CachingDownloader" + e.getMessage());
         } catch (NumberFormatException e) {
@@ -139,7 +150,7 @@ public class WebCrawler implements Crawler {
     /**
      * Pair for BFS-algorithm
      */
-    private static class Pair {
+    private static class UrlAndDepth {
         /**
          * URL
          */
@@ -151,16 +162,18 @@ public class WebCrawler implements Crawler {
 
         /**
          * Constructor
-         * @param url url)
+         *
+         * @param url   url
          * @param depth depth
          */
-        public Pair(String url, int depth) {
+        public UrlAndDepth(String url, int depth) {
             this.url = url;
             this.depth = depth;
         }
 
         /**
          * Getter for URL
+         *
          * @return URL
          */
         public String getUrl() {
@@ -169,6 +182,7 @@ public class WebCrawler implements Crawler {
 
         /**
          * Getter for depth
+         *
          * @return depth
          */
         public int getDepth() {
