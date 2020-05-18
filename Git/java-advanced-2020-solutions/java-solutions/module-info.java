@@ -1,6 +1,7 @@
 module java.solutions {
     requires java.compiler;
     requires java.rmi;
+    requires junit;
 
     requires info.kgeorgiy.java.advanced.walk;
     requires info.kgeorgiy.java.advanced.arrayset;
@@ -27,4 +28,6 @@ module java.solutions {
     opens ru.ifmo.rain.kuznetsov.hello;
     exports ru.ifmo.rain.kuznetsov.bank;
     opens ru.ifmo.rain.kuznetsov.bank;
+    exports ru.ifmo.rain.kuznetsov.bank.test;
+    opens ru.ifmo.rain.kuznetsov.bank.test;
 }

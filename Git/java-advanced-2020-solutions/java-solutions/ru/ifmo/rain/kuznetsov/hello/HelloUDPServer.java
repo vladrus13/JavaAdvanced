@@ -12,8 +12,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 public class HelloUDPServer implements HelloServer {
-
-    private int packageSize;
     private DatagramSocket socket;
     private ExecutorService workers;
 
@@ -21,7 +19,7 @@ public class HelloUDPServer implements HelloServer {
     public void start(int port, int threadCount) {
         try {
             socket = new DatagramSocket(port);
-            packageSize = socket.getSendBufferSize();
+            int packageSize = socket.getSendBufferSize();
             workers = Executors.newFixedThreadPool(threadCount);
             for (int i = 0; i < threadCount; i++) {
                 workers.submit(() -> {
@@ -37,7 +35,7 @@ public class HelloUDPServer implements HelloServer {
                 });
             }
         } catch (SocketException e) {
-            // bad soket
+            // bad socket
         }
     }
 
