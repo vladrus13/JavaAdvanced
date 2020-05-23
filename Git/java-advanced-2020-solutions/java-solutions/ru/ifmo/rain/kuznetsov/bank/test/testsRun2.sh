@@ -1,6 +1,9 @@
-Lib="../../java-advanced-2020/lib/"
-Artifacts="../../java-advanced-2020/artifacts/"
+Lib="../../java-advanced-2020/lib/junit-4.11.jar"
+Artifacts="../../java-advanced-2020/lib/hamcrest-core-1.3.jar"
 
-cd ../../../../../../
-javac -p "$Lib:$Artifacts" $(find . -name "*.java") &&
-java -p .:"$Lib:$Artifacts" org.junit.runner.JUnitCore java-solutions.ru.ifmo.rain.kuznetsov.bank.test.BankTests
+cd .. &&
+./build.sh &&
+cd ../../../../../ &&
+java -cp .:"$Lib:$Artifacts" org.junit.runner.JUnitCore ru.ifmo.rain.kuznetsov.bank.test.BankTests &&
+cd ru/ifmo/rain/kuznetsov/bank &&
+./debuild.sh

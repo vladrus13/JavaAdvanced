@@ -1,7 +1,6 @@
 package ru.ifmo.rain.kuznetsov.bank;
 
-import java.rmi.*; 
-import java.util.Map;
+import java.rmi.*;
 
 public interface Account extends Remote {
     /** Returns account identifier. */
@@ -15,8 +14,8 @@ public interface Account extends Remote {
     /** Returns name */
     String getName() throws RemoteException;
 
-    /** Returns family */
-    String getFamily() throws RemoteException;
+    /** Returns lastName */
+    String getLastName() throws RemoteException;
 
     /** Returns passport */
     int getPassport() throws RemoteException;

@@ -3,6 +3,7 @@ module java.solutions {
     requires java.rmi;
     requires junit;
 
+    requires info.kgeorgiy.java.advanced.base;
     requires info.kgeorgiy.java.advanced.walk;
     requires info.kgeorgiy.java.advanced.arrayset;
     requires info.kgeorgiy.java.advanced.student;

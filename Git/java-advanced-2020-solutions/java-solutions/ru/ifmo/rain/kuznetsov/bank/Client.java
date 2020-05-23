@@ -26,7 +26,7 @@ public class Client {
             return;
         }
         final String name = args.length >= 1 ? args[0] : "NON";
-        final String family = args.length >= 2 ? args[1] : "NON";
+        final String lastName = args.length >= 2 ? args[1] : "NON";
         final String passport = args.length >= 3 ? args[2] : "NON";
         final String accountId = args.length >= 4 ? args[3] : "NON";
         final String changeAmount = args.length >= 5 ? args[4] : "0";
@@ -34,7 +34,10 @@ public class Client {
         Account account = bank.getAccount(accountId);
         if (account == null) {
             System.out.println("Creating account");
-            account = bank.createRemoteAccount(name, family, accountId, Integer.parseInt(passport));
+            account = bank.createRemoteAccount(name, lastName, accountId, Integer.parseInt(passport));
+            if (account == null) {
+                System.out.println("Wrong data");
+            }
         } else {
             System.out.println("Account already exists");
         }

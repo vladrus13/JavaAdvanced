@@ -4,6 +4,8 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 import ru.ifmo.rain.kuznetsov.bank.Account;
 import ru.ifmo.rain.kuznetsov.bank.Bank;
 import ru.ifmo.rain.kuznetsov.bank.Server;
@@ -21,6 +23,7 @@ import java.util.Random;
 /**
  * Test class for bank
  */
+@RunWith(JUnit4.class)
 public class BankTests {
 
     @BeforeClass
@@ -89,10 +92,69 @@ public class BankTests {
     }
 
     @Test
+    public void testCreateAccount() {
+        System.out.println("\n========================\nTesting: testCreateAccount\n");
+        Account account;
+        try (Bank bank = createTestBank("00")) {
+            account = bank.createRemoteAccount("Vlad", "Kuznetsov", "1", 365000);
+            assertEquals(account.getName(), "Vlad");
+            assertEquals(account.getLastName(), "Kuznetsov");
+            assertEquals(account.getId(), "1");
+        } catch (RemoteException e) {
+            fail(e.getMessage());
+        }
+    }
+
+    @Test
+    public void testCreateTwoAccount() {
+        System.out.println("\n========================\nTesting: testCreateTwoAccount\n");
+        Account account1, account2;
+        try (Bank bank = createTestBank("01")) {
+            account1 = bank.createRemoteAccount("Vlad", "Kuznetsov", "1", 365000);
+            account2 = bank.createRemoteAccount("Vladislav", "Kuznetsov", "2", 365001);
+            assertEquals(account1.getName(), "Vlad");
+            assertEquals(account1.getLastName(), "Kuznetsov");
+            assertEquals(account1.getId(), "1");
+            assertEquals(account2.getName(), "Vladislav");
+            assertEquals(account2.getLastName(), "Kuznetsov");
+            assertEquals(account2.getId(), "2");
+        } catch (RemoteException e) {
+            fail(e.getMessage());
+        }
+    }
+
+    @Test
+    public void testCreateTwoSameAccount() {
+        System.out.println("\n========================\nTesting: testCreateTwoSameAccount\n");
+        Account account1, account2;
+        try (Bank bank = createTestBank("02")) {
+            account1 = bank.createRemoteAccount("Vlad", "Kuznetsov", "1", 365000);
+            account2 = bank.createRemoteAccount("Vlad", "Kuznetsov", "1", 365000);
+            assertEquals(account1, account2);
+        } catch (RemoteException e) {
+            fail(e.getMessage());
+        }
+    }
+
+    @SuppressWarnings("UnusedAssignment")
+    @Test
+    public void testCreateTwoWrongAccount() {
+        System.out.println("\n========================\nTesting: testCreateTwoWrongAccount\n");
+        Account account;
+        try (Bank bank = createTestBank("03")) {
+            account = bank.createRemoteAccount("Vlad", "Kuznetsov", "1", 365000);
+            account = bank.createRemoteAccount("Vlad", "Kuznetsov", "1", 365001);
+            assertNull(account);
+        } catch (RemoteException e) {
+            fail(e.getMessage());
+        }
+    }
+
+    @Test
     public void testOneAccount() {
         System.out.println("\n========================\nTesting: testOneAccount\n");
         Account account;
-        try (Bank bank = createTestBank("01")) {
+        try (Bank bank = createTestBank("04")) {
             account = bank.createRemoteAccount("Vlad", "Kuznetsov", "1", 365000);
             account.addAmount(100, "365000:1");
             testMoney(account, "365000:1", 100);
@@ -107,7 +169,7 @@ public class BankTests {
     public void testOneAccountMoreAmount() {
         System.out.println("\n========================\nTesting: testOneAccountMoreAmount\n");
         Account account;
-        try (Bank bank = createTestBank("02")) {
+        try (Bank bank = createTestBank("05")) {
             account = bank.createRemoteAccount("Vlad", "Kuznetsov", "1", 666333);
             account.addAmount(200, "666333:1");
             testMoney(account, "666333:1", 200);
@@ -127,21 +189,21 @@ public class BankTests {
     public void testMoreAccountOneAmountRandom() {
         System.out.println("\n========================\nTesting: testMoreAccountMoreAmountRandom\n");
         Map<Integer, Account> accountMap = new HashMap<>();
-        try (Bank bank = createTestBank("03")) {
+        try (Bank bank = createTestBank("06")) {
             for (int i = 0; i < 100; i++) { // generate 100 random accounts
                 byte[] name = new byte[10];
-                byte[] family = new byte[7];
+                byte[] lastName = new byte[7];
                 new Random().nextBytes(name);
-                new Random().nextBytes(family);
+                new Random().nextBytes(lastName);
                 Account account = bank.createRemoteAccount(
                         new String(name, StandardCharsets.UTF_8),
-                        new String(family, StandardCharsets.UTF_8),
+                        new String(lastName, StandardCharsets.UTF_8),
                         String.valueOf(i + 1),
                         random.nextInt(999998));
                 accountMap.put(i + 1, account);
                 account.setAmount(0, String.format("%d:%d", account.getPassport(), 1));
             }
-            for (int i = 0; i < 1000; i++) { // do smth with it
+            for (int i = 0; i < 100; i++) { // do smth with it
                 int id = random.nextInt(100) + 1;
                 Account account = accountMap.get(id);
                 String stringAmount = String.format("%d:%d", account.getPassport(), 1);
@@ -158,7 +220,7 @@ public class BankTests {
     public void testLocalAndRemoteAccount() {
         System.out.println("\n========================\nTesting: testLocalAndRemoteAccount\n");
         Account localAccount, remoteAccount;
-        try (Bank bank = createTestBank("04")){
+        try (Bank bank = createTestBank("07")){
             remoteAccount = bank.createRemoteAccount("Vlad", "Kuznetsov", "1", 342000);
             localAccount = bank.createLocalAccount("Vlad", "Kuznetsov", "1", 342000);
             remoteAccount.addAmount(100, "342000:1");
