@@ -203,7 +203,7 @@ public class BankTests {
                 accountMap.put(i + 1, account);
                 account.setAmount(0, String.format("%d:%d", account.getPassport(), 1));
             }
-            for (int i = 0; i < 100; i++) { // do smth with it
+            for (int i = 0; i < 10000; i++) { // do smth with it
                 int id = random.nextInt(100) + 1;
                 Account account = accountMap.get(id);
                 String stringAmount = String.format("%d:%d", account.getPassport(), 1);

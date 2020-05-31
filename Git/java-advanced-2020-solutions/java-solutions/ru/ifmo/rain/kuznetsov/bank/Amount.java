@@ -33,7 +33,7 @@ public class Amount implements Remote, Serializable {
      */
     public Amount(String id) {
         this.id = id;
-        this.money = 0;
+        this.money =  0;
     }
 
     /**
