@@ -27,8 +27,17 @@ module java.solutions {
     opens ru.ifmo.rain.kuznetsov.crawler;
     exports ru.ifmo.rain.kuznetsov.hello;
     opens ru.ifmo.rain.kuznetsov.hello;
-    exports ru.ifmo.rain.kuznetsov.bank;
-    opens ru.ifmo.rain.kuznetsov.bank;
+    exports ru.ifmo.rain.kuznetsov.bank.server;
+    opens ru.ifmo.rain.kuznetsov.bank.server;
+    exports ru.ifmo.rain.kuznetsov.bank.common;
+    opens ru.ifmo.rain.kuznetsov.bank.common;
+    exports ru.ifmo.rain.kuznetsov.bank.client;
+    opens ru.ifmo.rain.kuznetsov.bank.client;
+
     exports ru.ifmo.rain.kuznetsov.bank.test;
     opens ru.ifmo.rain.kuznetsov.bank.test;
+    exports ru.ifmo.rain.kuznetsov.i18n;
+    opens ru.ifmo.rain.kuznetsov.i18n;
+    exports ru.ifmo.rain.kuznetsov.i18n.test;
+    opens ru.ifmo.rain.kuznetsov.i18n.test;
 }

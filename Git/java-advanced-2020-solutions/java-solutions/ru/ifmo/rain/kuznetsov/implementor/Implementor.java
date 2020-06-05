@@ -135,6 +135,7 @@ public class Implementor implements Impler {
      *
      * @return " "
      */
+    @SuppressWarnings("SameReturnValue")
     private String generateSpace() {
         return " ";
     }

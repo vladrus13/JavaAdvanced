@@ -3,52 +3,57 @@ package ru.ifmo.rain.kuznetsov.hello;
 import info.kgeorgiy.java.advanced.hello.HelloServer;
 
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.SocketException;
+import java.net.*;
+import java.nio.ByteBuffer;
+import java.nio.channels.DatagramChannel;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 public class HelloUDPNonblockingServer implements HelloServer {
 
-    private DatagramSocket socket;
-    private ExecutorService workers;
+    private Selector selector;
 
     @Override
     public void start(int port, int threadCount) {
         try {
-            socket = new DatagramSocket(port);
-            int packageSize = socket.getSendBufferSize();
-            workers = Executors.newFixedThreadPool(threadCount);
-            for (int i = 0; i < threadCount; i++) {
-                workers.submit(() -> {
-                    while (!socket.isClosed()) {
-                        DatagramPacket packet = new DatagramPacket(new byte[packageSize], packageSize);
-                        try {
-                            socket.receive(packet);
-                            packet.setData(("Hello, " + new String(packet.getData(), packet.getOffset(), packet.getLength(), StandardCharsets.UTF_8)).getBytes(StandardCharsets.UTF_8));
-                            socket.send(packet);
-                        } catch (IOException ignored) {
-                        }
-                    }
-                });
+            selector = Selector.open();
+        } catch (IOException exception) {
+            exception.printStackTrace();
+        }
+
+        DatagramChannel datagramChannel;
+        try {
+            datagramChannel = DatagramChannel.open();
+            datagramChannel.configureBlocking(false);
+            datagramChannel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
+            datagramChannel.socket().bind(new InetSocketAddress(InetAddress.getLocalHost(), port));
+        } catch (IOException exception) {
+            exception.printStackTrace();
+            log("ERROR: " + exception.getMessage());
+            return;
+        }
+        ByteBuffer receive = ByteBuffer.allocate(2048);
+        ByteBuffer send = ByteBuffer.allocate(2048);
+        for (int threadNum = 0; threadNum < threadCount; threadNum++) {
+            try {
+                datagramChannel.register(selector, SelectionKey.OP_READ);
+                receive.clear();
+                datagramChannel.read(receive);
+                send.clear();
+                send.put("Hello, ".getBytes(StandardCharsets.UTF_8));
+                send.flip();
+                datagramChannel.send(send, new InetSocketAddress(InetAddress.getLocalHost(), port));
+            } catch (IOException e) {
+                log("ERROR: " + e.getMessage());
+                return;
             }
-        } catch (SocketException e) {
-            // bad socket
         }
     }
 
     @Override
     public void close() {
-        socket.close();
-        workers.shutdown();
-        try {
-            workers.awaitTermination(500, TimeUnit.MILLISECONDS);
-        } catch (InterruptedException ignored) {
 
-        }
     }
 
     public static void main(String[] args) {
@@ -63,5 +68,9 @@ public class HelloUDPNonblockingServer implements HelloServer {
         } catch (NumberFormatException exception) {
             System.out.println("Error on parse" + exception.getMessage());
         }
+    }
+
+    private void log(String s) {
+        System.out.println(s);
     }
 }

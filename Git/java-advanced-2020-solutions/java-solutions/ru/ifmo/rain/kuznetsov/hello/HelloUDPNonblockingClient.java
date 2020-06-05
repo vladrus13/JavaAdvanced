@@ -4,56 +4,92 @@ import info.kgeorgiy.java.advanced.hello.HelloClient;
 
 import java.io.IOException;
 import java.net.*;
+import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
+import java.nio.channels.DatagramChannel;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.Iterator;
 
 public class HelloUDPNonblockingClient implements HelloClient {
-
     @Override
     public void run(String hostName, int port, String prefix, int threadCount, int requestCount) {
+        Selector selector;
+        try {
+            selector = Selector.open();
+        } catch (IOException e) {
+            log("ERROR: Can't open selector: " + e.getMessage());
+            return;
+        }
+
         SocketAddress address;
         try {
             address = new InetSocketAddress(InetAddress.getByName(hostName), port);
         } catch (UnknownHostException ignored) {
-            // "ERROR: Bad HostName"
+            log("ERROR: Bad HostName");
             return;
         }
-        ExecutorService workers = Executors.newFixedThreadPool(threadCount);
+
         for (int threadId = 0; threadId < threadCount; threadId++) {
-            int finalThreadId = threadId;
-            workers.submit(() -> {
-                try (DatagramSocket socket = new DatagramSocket()) {
-                    socket.setSoTimeout(100);
-                    DatagramPacket response = new DatagramPacket(new byte[socket.getReceiveBufferSize()], socket.getReceiveBufferSize());
-                    DatagramPacket request = new DatagramPacket(new byte[0], 0, address);
-                    for (int requestId = 0; requestId < requestCount; requestId++) {
-                        String requestString = prefix + finalThreadId + "_" + requestId;
-                        while (!socket.isClosed() && !Thread.interrupted()) {
-                            try {
-                                request.setData(requestString.getBytes(StandardCharsets.UTF_8));
-                                socket.send(request);
-                                socket.receive(response);
-                                String responseString = new String(response.getData(), response.getOffset(), response.getLength(), StandardCharsets.UTF_8);
-                                if (responseString.matches("[\\D]*" + finalThreadId + "[\\D]*" + requestId + "[\\D]*")) {
-                                    System.out.println("New answer:\n\tRequest: " + requestString + "\n\tResponse: " + responseString);
-                                    break;
-                                }
-                            } catch (IOException ignored) {
-                                // "New answer:\n\tFailed on " + requestString + " Message: " + ignored.getMessage()
-                            }
+            try {
+                DatagramChannel datagramChannel = DatagramChannel.open();
+                datagramChannel.configureBlocking(false);
+                datagramChannel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
+                datagramChannel.connect(address);
+                datagramChannel.register(selector, SelectionKey.OP_WRITE, threadId);
+            } catch (IOException e) {
+                log("ERROR: " + e.getMessage());
+                return;
+            }
+        }
+        while (selector.isOpen()) {
+            if (selector.selectedKeys().size() == 0) {
+                try {
+                    selector.select();
+                } catch (IOException exception) {
+                    exception.printStackTrace();
+                }
+            }
+            for (final Iterator <SelectionKey> it = selector.selectedKeys().iterator(); it.hasNext(); ) {
+                final SelectionKey key = it.next();
+                if (key.isWritable()) {
+                    for (int i = 0; i < requestCount; i++) {
+                        String answer = prefix + key.attachment() + "_" + i;
+                        DatagramChannel senderChannel = (DatagramChannel) key.channel();
+                        ByteBuffer request = ByteBuffer.allocate(2048);
+                        request.clear();
+                        request.put(answer.getBytes());
+                        request.flip();
+                        //System.out.println("Sending: " + answer);
+                        try {
+                            senderChannel.send(request, address);
+                        } catch (IOException exception) {
+                            exception.printStackTrace();
                         }
                     }
-                } catch (SocketException e) {
-                    // "ERROR: Bad socket"
                 }
-            });
-        }
-        workers.shutdown();
-        try {
-            workers.awaitTermination(10 * requestCount * threadCount, TimeUnit.SECONDS);
-        } catch (InterruptedException ignored) {
+                if (key.isReadable()) {
+                    System.out.println("Reading");
+                    ByteBuffer receive = ByteBuffer.allocate(2048);
+                    receive.clear();
+                    DatagramChannel datagramChannel = (DatagramChannel) key.channel();
+                    try {
+                        datagramChannel.receive(receive);
+                    } catch (IOException exception) {
+                        exception.printStackTrace();
+                    }
+                    String responseString = new String(receive.array(), StandardCharsets.UTF_8);
+                    if (responseString.matches("[\\D]*" + key.attachment() + "[\\D]*" + "[\\D]*")) {
+                        System.out.println("New answer:\n\tRequest: " + responseString + "\n\tResponse: " + responseString);
+                        break;
+                    } else {
+                        System.out.println("New wrong answer:\n\tRequest: " + responseString + "\n\tResponse: " + responseString);
+                        break;
+                    }
+                }
+                it.remove();
+            }
         }
     }
 
@@ -63,9 +99,13 @@ public class HelloUDPNonblockingClient implements HelloClient {
             return;
         }
         try {
-            new HelloUDPNonblockingClient().run(args[0], Integer.parseInt(args[1]), args[2], Integer.parseInt(args[3]), Integer.parseInt(args[4]));
+            new HelloUDPClient().run(args[0], Integer.parseInt(args[1]), args[2], Integer.parseInt(args[3]), Integer.parseInt(args[4]));
         } catch (NumberFormatException exception) {
             System.out.println("Wrong format numbers" + exception.getMessage());
         }
+    }
+
+    private void log(String s) {
+        System.out.println(s);
     }
 }

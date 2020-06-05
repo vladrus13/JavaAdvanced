@@ -322,8 +322,7 @@ public class TextStatistics {
     public static void main(String[] args) {
         ResourceBundle defaultBundle = null;
         try {
-            // TODO just replace US to getDefault(). It's not wrong, but why not
-            defaultBundle = ResourceBundle.getBundle("ru.ifmo.rain.kuznetsov.i18n.StatisticsResourceBundle", Locale.US);
+            defaultBundle = ResourceBundle.getBundle("ru.ifmo.rain.kuznetsov.i18n.StatisticsResourceBundle", Locale.getDefault());
         } catch (MissingResourceException ignored) {
         }
         if (defaultBundle == null) {
