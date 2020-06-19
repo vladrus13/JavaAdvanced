@@ -1,0 +1,166 @@
+html, body {
+    margin: 0;
+    padding: 0;
+    min-height: 100%;
+    height: 100%;
+}
+
+#header {
+    position: relative;
+    height: 10ex;
+    background: url(tile.png);
+    color: #fff;
+    border-top: solid 1px #3F8ADB;
+    width: 100%;
+    border-collapse:collapse;
+}
+
+#title {
+    font: bolder 300% Arial, Helvetica, Sans-serif;
+    letter-spacing: -0.2ex;
+    color: white;
+    background: transparent;
+    padding-left: 0.3em;
+}
+
+#breadcrumbs {
+    font: bolder 100% Arial, Helvetica, Sans-serif;
+    letter-spacing: -0.15ex;
+    color: white; background: transparent;
+    padding-left: 1em;
+    padding-bottom: -1ex;
+}
+
+#breadcrumbs a {
+    color: white;
+}
+
+#header-links {
+    position: absolute;
+    color: white; background: transparent;
+    font: normal 100% Arial, Helvetica, Sans-serif;
+    top: 20px; right: 20px;
+}
+#header-links a {
+    color: white;
+}
+a:hover {
+/*    color: #D4FF55;*/
+    color: #1E5A9D;
+}
+
+a {
+/*    color: #3F8ADB;*/
+    color: #17487D;
+}
+
+#main {
+    margin-left: 1em;
+}
+
+
+h1, h2, h3, h4, h5, h6 {
+    padding: 0;
+    margin-bottom: 0;
+}
+
+h1 {
+    font: bolder 200% Arial, Helvetica, Sans-serif;
+    letter-spacing: -0.2ex;
+    color: #448fdb;
+}
+
+h2 {
+    font: bolder 150% Arial, Helvetica, Sans-serif;
+    letter-spacing: -0.2ex;
+    color: #2666c3;
+}
+
+h3 {
+    font: bolder 120% Arial, Helvetica, Sans-serif;
+    letter-spacing: -0.15ex;
+    color: black;
+}
+
+h4 {
+    font: bolder 100% Arial, Helvetica, Sans-serif;
+    letter-spacing: -0.1ex;
+    color: black;
+}
+
+table.black {
+    border-collapse: collapse;
+    vertical-align: top;
+
+    padding: 3px;
+    text-align: justify;
+}
+
+table.black td, table.black th {
+    background: white;
+}
+
+.center {
+    text-align: center;
+}
+
+table.black th {
+    background-color: #2666c3 !important;
+    background: url(tile.png);
+    letter-spacing: -0.15ex;
+    color: white;
+    border: solid 1px #133964 !important;
+    text-align: center;
+}
+
+table.black td {
+    border: solid 1px #2666c3 !important;
+}
+
+#body {
+    width: 100%;
+    border-collapse: collapse;
+    min-height: 100%;
+    height: 100%;
+}
+#sidebar {
+    width: 20%;
+    max-width: 20vw;
+    background-color: #ecf3fb;
+    height: 100%;
+    vertical-align: top;
+    padding-left: 1em;
+}
+#main {
+    width: 80%;
+    max-width: 75vw;
+    vertical-align: top;
+    padding: 0em 1em 1em 1em;
+}
+
+#sidebar h1, #sidebar h2, #sidebar h3, #sidebar h4 {
+    font: normal 90% Arial;
+    letter-spacing: 0;
+    padding: 0;
+    margin: 0;
+}
+
+#sidebar h2 {
+    margin-left: 1em;
+}
+
+#sidebar h3 {
+    margin-left: 2em;
+}
+
+#sidebar h4 {
+    margin-left: 3em;
+}
+
+#sidebar > div {
+    background-color: transparent;
+}
+
+#sidebar-foot {
+    padding-top: 3em;
+}
